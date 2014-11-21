@@ -39,7 +39,7 @@ namespace TrackedLock
         private TestRunner.TestResult IncrementTest(int[] perThreadMax)
         {
             SharedState = 0;
-            TrackedLock<string> theLock = new TrackedLock<string>();
+            TrackedLock<string> theLock = new TrackedLock<string>("aLock");
             Thread[] threads = new Thread[perThreadMax.Length];
             IncrementWorkerState[] states = new IncrementWorkerState[threads.Length];
             int expectedMax = perThreadMax.Sum();
@@ -80,5 +80,19 @@ namespace TrackedLock
         {
             return IncrementTest(new int[] { 1000, 1000, 1000, 1000, 1000, 1000 });
         }
+
+        private void LockALock(object oLock)
+        {
+            ((TrackedLock<string>)oLock).Acquire("me");
+        }
+        public TestRunner.TestResult TestTimeout()
+        {
+            TrackedLock<string> myLock = new TrackedLock<string>("aLock");
+            Thread locker = new Thread(LockALock);
+            locker.Start(myLock);
+            locker.Join();
+            return TestRunner.ExpectException<ApplicationException>(() => myLock.Acquire("me"));
+        }
+
     }
 }
